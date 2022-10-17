@@ -1,0 +1,52 @@
+version: '3.8'
+services:
+  litress-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: litress-api
+    restart: always
+    ports:
+      - 3000:3000
+    networks:
+      - default
+    depends_on:
+      - litress-db
+    env_file:
+      - .env
+
+  litress-db:
+    container_name: litress-db
+    image: postgres:13
+    restart: always
+    ports:
+      - 5432:5432
+    networks:
+      - default
+    env_file:
+      - .env
+    volumes:
+      - litress-db:/var/lib/postgresql/data
+
+  litress-frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.front
+    container_name: litress-frontend
+    restart: always
+    env_file:
+      - .env
+  nginx:
+    restart: always
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    ports:
+      - '80:80'
+
+volumes:
+  litress-db:
+    name: litress-db
+
+networks:
+  default:
