@@ -1,7 +1,9 @@
 import {
   ForbiddenException,
+  forwardRef,
   HttpException,
   HttpStatus,
+  Inject,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -15,11 +17,18 @@ import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
 
 @Injectable()
 export class AuthService {
+  public get user(): UserService {
+    return this._user;
+  }
+  public set user(value: UserService) {
+    this._user = value;
+  }
   constructor(
     private prisma: PrismaService,
     private jwt: JwtService,
     private config: ConfigService,
-    private user: UserService
+    @Inject(forwardRef(() => UserService))
+    private _user: UserService
   ) {}
 
   async login(dto: { login: string; password: string }) {

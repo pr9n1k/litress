@@ -1,9 +1,23 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  forwardRef,
+  HttpException,
+  HttpStatus,
+  Inject,
+  Injectable,
+} from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from 'nestjs-prisma';
+import { AuthService } from '../auth/auth.service';
+import { FileService } from '../file/file.service';
 
 @Injectable()
 export class UserService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private jwt: JwtService,
+    @Inject(forwardRef(() => AuthService))
+    private file: FileService
+  ) {}
 
   async create(dto: { login: string; password: string }) {
     const candidateForEmail = await this.prisma.user.findUnique({
@@ -21,5 +35,67 @@ export class UserService {
       },
     });
     return user;
+  }
+
+  async getMe(token: string) {
+    const access_token = token.split(' ')[1];
+    const decode = this.jwt.decode(access_token);
+    if (!decode) {
+      throw new HttpException(`Токен не валидный`, HttpStatus.BAD_REQUEST);
+    }
+    const user = await this.prisma.user.findUnique({
+      where: {
+        login: decode['login'],
+      },
+    });
+    delete user.password;
+    return user;
+  }
+  async updateName(token: string, dto: { name: string }) {
+    const access_token = token.split(' ')[1];
+    const user = this.jwt.decode(access_token);
+    if (!user) {
+      throw new HttpException(`Токен не валидный`, HttpStatus.BAD_REQUEST);
+    }
+    await this.prisma.user.update({
+      where: {
+        id: user['sub'],
+      },
+      data: {
+        name: dto.name,
+      },
+    });
+    return { message: 'Имя обновлено' };
+  }
+
+  async updatePicture(token: string, file) {
+    const access_token = token.split(' ')[1];
+    const user = this.jwt.decode(access_token);
+    if (!user) {
+      throw new HttpException(`Токен не валидный`, HttpStatus.BAD_REQUEST);
+    }
+    const picture = await this.file.createFile(file);
+    await this.prisma.user.update({
+      where: { id: user['sub'] },
+      data: {
+        picture,
+      },
+    });
+    return { message: 'Фото обновлено' };
+  }
+
+  async createLink(token: string, dto: { title: string; value: string }) {
+    const access_token = token.split(' ')[1];
+    const user = this.jwt.decode(access_token);
+    if (!user) {
+      throw new HttpException(`Токен не валидный`, HttpStatus.BAD_REQUEST);
+    }
+    return await this.prisma.link.create({
+      data: {
+        userId: user['sub'],
+        title: dto.title,
+        value: dto.value,
+      },
+    });
   }
 }
