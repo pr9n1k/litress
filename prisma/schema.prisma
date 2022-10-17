@@ -14,12 +14,13 @@ model User {
   id        Int      @id @default(autoincrement())
   createdAt DateTime @default(now())
   updateAt  DateTime @updatedAt
-  name      String
+  name      String?
   login     String   @unique
   password  String
-  picture   String
+  picture   String?
   Link      Link[]
   Post      Post[]
+  Token     Token[]
 }
 
 model Link {
@@ -41,4 +42,11 @@ model Post {
   picture   String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    Int
+}
+
+model Token {
+  id      Int    @id @default(autoincrement())
+  refresh String
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId  Int
 }
