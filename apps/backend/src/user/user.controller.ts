@@ -7,10 +7,13 @@ import {
   Patch,
   Post,
   UploadedFile,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
+@UseGuards(JwtAuthGuard)
 @Controller('user')
 export class UserController {
   constructor(private service: UserService) {}
@@ -37,7 +40,7 @@ export class UserController {
   @Post('link')
   createLink(
     @Headers('Authorization') token: string,
-    dto: { title: string; value: string }
+    @Body() dto: { title: string; value: string }
   ) {
     return this.service.createLink(token, dto);
   }

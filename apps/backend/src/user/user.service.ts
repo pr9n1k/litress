@@ -13,10 +13,11 @@ import { FileService } from '../file/file.service';
 @Injectable()
 export class UserService {
   constructor(
+    private fileService: FileService,
     private prisma: PrismaService,
     private jwt: JwtService,
     @Inject(forwardRef(() => AuthService))
-    private file: FileService
+    private auth: AuthService
   ) {}
 
   async create(dto: { login: string; password: string }) {
@@ -49,7 +50,12 @@ export class UserService {
       },
     });
     delete user.password;
-    return user;
+    const links = await this.prisma.link.findMany({
+      where: {
+        userId: user.id,
+      },
+    });
+    return { ...user, links };
   }
   async updateName(token: string, dto: { name: string }) {
     const access_token = token.split(' ')[1];
@@ -74,7 +80,7 @@ export class UserService {
     if (!user) {
       throw new HttpException(`Токен не валидный`, HttpStatus.BAD_REQUEST);
     }
-    const picture = await this.file.createFile(file);
+    const picture = await this.fileService.createFile(file);
     await this.prisma.user.update({
       where: { id: user['sub'] },
       data: {

@@ -8,7 +8,9 @@ import {
   Post,
   Req,
   Res,
+  UseGuards,
 } from '@nestjs/common';
+import { JwtAuthGuard } from './jwt-auth.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -42,6 +44,7 @@ export class AuthController {
     return data;
   }
 
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   @Post('logout')
   async logout(
@@ -54,6 +57,7 @@ export class AuthController {
     return token;
   }
 
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   @Post('refresh')
   async refresh(@Req() request: Request, @Res() response: Response) {
